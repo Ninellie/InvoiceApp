@@ -29,6 +29,28 @@ namespace InvoiceApp
         public string id;
         public string date;
         public List<OrderData> orders;
+
+        public Dictionary<int, double> MassPerDiameters => GetMassPerDiameters();
+
+        // Подсчёт диаметров
+        private Dictionary<int, double> GetMassPerDiameters()
+        {
+            Dictionary<int, double> dictionary = new Dictionary<int, double>();
+            foreach (OrderData order in orders)
+            {
+                foreach (ItemData item in order.items)
+                {
+                    if (dictionary.ContainsKey(item.diameter))
+                    {
+                        dictionary[item.diameter] += item.TotalMass;
+                        continue;
+                    }
+                    dictionary.Add(item.diameter, item.TotalMass);
+                }
+            }
+
+            return dictionary;
+        }
     }
 
     public class ParticipantData
@@ -113,9 +135,32 @@ namespace InvoiceApp
             var orderRowIndex = 16;
             var itemRowIndex = orderRowIndex + 1;
 
-            var cellStyle = workbook.CreateCellStyle();
-            cellStyle.BorderBottom = BorderStyle.Thin;
 
+            // Подсчёт масс для каждого диаметра
+            var massPerDiameters = invoiceData.MassPerDiameters;
+            var keys = massPerDiameters.Keys;
+            var massSumRow = 19;
+            foreach (var value in keys.Select(key => $"{key} = {massPerDiameters[key]} kg"))
+            {
+                sheet.GetRow(massSumRow).GetCell(3).SetCellValue(value);
+                massSumRow++;
+            }
+
+            //creating style
+            var cellStyle = workbook.CreateCellStyle();
+            cellStyle.BorderTop = BorderStyle.Thin;
+            cellStyle.BorderBottom = BorderStyle.Thin;
+            cellStyle.BorderLeft = BorderStyle.Thin;
+            cellStyle.BorderRight = BorderStyle.Thin;
+
+            // inserting new rows
+            var firstRow = orderRowIndex;
+            var secondRow = orderRowIndex + 2;
+            var newRowsNumber = invoiceData.orders.Count + invoiceData.orders.Sum(order => order.items.Count);
+            sheet.ShiftRows(firstRow, secondRow, newRowsNumber, true, false);
+
+
+            // filling cells
             for (int i = 0; i < invoiceData.orders.Count; i++)
             {
                 var order = invoiceData.orders[i];
@@ -123,6 +168,7 @@ namespace InvoiceApp
                 orderNameCell.SetCellValue(order.name);
                 orderRowIndex++;
                 orderNameCell.CellStyle = cellStyle;
+                orderNameCell.CellStyle.Alignment = HorizontalAlignment.Center;
 
                 for (var j = 0; j < order.items.Count; j++)
                 {
@@ -131,16 +177,24 @@ namespace InvoiceApp
 
                     itemRow.CreateCell(1).SetCellValue(item.id);
                     itemRow.GetCell(1).CellStyle = cellStyle;
-                    itemRow.CreateCell(2).SetCellValue(item.lengthPerItem);
+
+                    itemRow.CreateCell(2).SetCellValue(item.diameter);
                     itemRow.GetCell(2).CellStyle = cellStyle;
-                    itemRow.CreateCell(3).SetCellValue(item.amount);
+
+                    itemRow.CreateCell(3).SetCellValue(item.lengthPerItem);
                     itemRow.GetCell(3).CellStyle = cellStyle;
-                    itemRow.CreateCell(4).SetCellValue(item.TotalLength);
+
+                    itemRow.CreateCell(4).SetCellValue(item.amount);
                     itemRow.GetCell(4).CellStyle = cellStyle;
-                    itemRow.CreateCell(5).SetCellValue(item.massPerMeter);
+
+                    itemRow.CreateCell(5).SetCellValue(item.TotalLength);
                     itemRow.GetCell(5).CellStyle = cellStyle;
-                    itemRow.CreateCell(6).SetCellValue(item.TotalMass);
+
+                    itemRow.CreateCell(6).SetCellValue(item.massPerMeter);
                     itemRow.GetCell(6).CellStyle = cellStyle;
+                    
+                    itemRow.CreateCell(7).SetCellValue(item.TotalMass);
+                    itemRow.GetCell(7).CellStyle = cellStyle;
 
                     itemRowIndex++;
                 }
