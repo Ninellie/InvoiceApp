@@ -155,9 +155,11 @@ namespace InvoiceApp
 
             // inserting new rows
             var firstRow = orderRowIndex;
-            var secondRow = orderRowIndex + 2;
             var newRowsNumber = invoiceData.orders.Count + invoiceData.orders.Sum(order => order.items.Count);
+            var secondRow = orderRowIndex + newRowsNumber; // Вместо 100 вставить кол-во всех позиций
             sheet.ShiftRows(firstRow, secondRow, newRowsNumber, true, false);
+
+
 
 
             // filling cells
