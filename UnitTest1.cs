@@ -1,8 +1,11 @@
+using System.Data.Common;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using NPOI.SS.Util;
 using NPOI.HSSF.Util;
+using CsvHelper;
+using System.Globalization;
 
 namespace InvoiceApp
 {
@@ -62,7 +65,7 @@ namespace InvoiceApp
         public string pdv;
     }
 
-    public class OrderData
+    public class OrderData // TechObject Data
     {
         public string name;
 
@@ -71,13 +74,23 @@ namespace InvoiceApp
 
     public class ItemData
     {
-        public int id;
-        public int diameter;
-        public double lengthPerItem;
-        public int amount;
+        public int id { get; set; } // order in techObject
+        public int diameter { get; set; } // millimeters
+        public double lengthPerItem { get; set; } // meters
+        public int amount { get; set; }
         public double TotalLength => lengthPerItem * amount;
-        public double massPerMeter;
+        public double massPerMeter { get; set; } // kg
         public double TotalMass => massPerMeter * lengthPerItem * amount;
+        //
+        public string TechObject { get; set; }
+    }
+
+    public class RawItemData
+    {
+        public int Id { get; set; }
+        public int Diameter { get; set; }
+        public double LengthPerItem { get; set; }
+        public int Amount { get; set; }
     }
 
     public class UnitTest1
@@ -86,10 +99,58 @@ namespace InvoiceApp
         public void Test1()
         {
             // Reading csv file
+            var records = new List<ItemData>();
+            using (var reader = new StreamReader(@"C:\Users\apawl\Documents\InvoiceDocs\InvoiceData.csv"))
+            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            {
+                csv.Read();
+                csv.ReadHeader();
+                while (csv.Read())
+                {
+                    var record = new ItemData
+                    {
+                         id = csv.GetField<int>("Id"),
+                         diameter = csv.GetField<int>("Ø"),
+                         lengthPerItem = csv.GetField<double>("м/ед"),
+                         amount = csv.GetField<int>("Ед"),
+                         massPerMeter = csv.GetField<double>("Кг/м"),
+                         TechObject = csv.GetField<string>("TechObject"),
+                    };
+                    records.Add(record);
+                }
+            }
+            
+            // Создание класса данных
+            var invoiceData = new InvoiceData
+            {
+                orders = new List<OrderData>()
+            };
 
+            // Заполнение класса накладной позициями из прочитанного csv файла
+            foreach (var itemData in records)
+            {
+                var orderExist = false;
+                foreach (var invoiceDataOrder in invoiceData.orders)
+                {
+                    if (invoiceDataOrder.name != itemData.TechObject) continue;
+                    invoiceDataOrder.items.Add(itemData);
+                    orderExist = true;
+                    break;
+                }
 
+                if (orderExist)
+                {
+                    continue;
+                }
 
+                var addedOrder = new OrderData
+                {
+                    name = itemData.TechObject,
+                    items = new List<ItemData> { itemData },
+                };
 
+                invoiceData.orders.Add(addedOrder);
+            }
 
             // Открытие существующей рабочей книги
             IWorkbook workbook;
@@ -100,8 +161,6 @@ namespace InvoiceApp
 
             // Создание нового листа
             var sheet = workbook.CloneSheet(0);
-
-            var invoiceData = new InvoiceData();
 
             sheet.GetRow(1).GetCell(2).SetCellValue(invoiceData.vendor.name);
             sheet.GetRow(2).GetCell(2).SetCellValue(invoiceData.vendor.address);
@@ -115,29 +174,6 @@ namespace InvoiceApp
             sheet.GetRow(4).GetCell(6).SetCellValue(invoiceData.customer.pib);
             sheet.GetRow(5).GetCell(6).SetCellValue(invoiceData.customer.pdv);
 
-            var orderData = new OrderData
-            {
-                name = new string("Very easy order")
-            };
-            var items = new List<ItemData>();
-
-            var itemsNumber = 5;
-            for (int i = 0; i < itemsNumber; i++)
-            {
-                var nextItem = new ItemData
-                {
-                    amount = 10,
-                    diameter = 10,
-                    id = 1,
-                    lengthPerItem = 13.4,
-                };
-
-                items.Add(nextItem);
-            }
-
-            orderData.items = items;
-            invoiceData.orders = new List<OrderData> { orderData };
-
             var orderRowIndex = 16;
             var itemRowIndex = orderRowIndex + 1;
 
@@ -146,7 +182,7 @@ namespace InvoiceApp
             var massPerDiameters = invoiceData.MassPerDiameters;
             var keys = massPerDiameters.Keys;
             var massSumRow = 19;
-            foreach (var value in keys.Select(key => $"{key} = {massPerDiameters[key]} kg"))
+            foreach (var value in keys.Select(key => $"Ø{key} = {massPerDiameters[key]} kg"))
             {
                 sheet.GetRow(massSumRow).GetCell(3).SetCellValue(value);
                 massSumRow++;
@@ -164,9 +200,6 @@ namespace InvoiceApp
             var newRowsNumber = invoiceData.orders.Count + invoiceData.orders.Sum(order => order.items.Count);
             var secondRow = orderRowIndex + newRowsNumber; // Вместо 100 вставить кол-во всех позиций
             sheet.ShiftRows(firstRow, secondRow, newRowsNumber, true, false);
-
-
-
 
             // filling cells
             for (int i = 0; i < invoiceData.orders.Count; i++)
