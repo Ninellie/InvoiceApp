@@ -6,6 +6,8 @@ using NPOI.SS.Util;
 using NPOI.HSSF.Util;
 using CsvHelper;
 using System.Globalization;
+using MathNet.Numerics;
+using NPOI.POIFS.Crypt;
 
 namespace InvoiceApp
 {
@@ -38,7 +40,8 @@ namespace InvoiceApp
         // Подсчёт диаметров
         private Dictionary<int, double> GetMassPerDiameters()
         {
-            Dictionary<int, double> dictionary = new Dictionary<int, double>();
+            var dictionary = new Dictionary<int, double>();
+
             foreach (OrderData order in orders)
             {
                 foreach (ItemData item in order.items)
@@ -51,7 +54,6 @@ namespace InvoiceApp
                     dictionary.Add(item.diameter, item.TotalMass);
                 }
             }
-
             return dictionary;
         }
     }
@@ -175,16 +177,16 @@ namespace InvoiceApp
             sheet.GetRow(5).GetCell(6).SetCellValue(invoiceData.customer.pdv);
 
             var orderRowIndex = 16;
-            var itemRowIndex = orderRowIndex + 1;
 
-
-            // Подсчёт масс для каждого диаметра
+            // Заполнение масс для каждого диаметра
             var massPerDiameters = invoiceData.MassPerDiameters;
-            var keys = massPerDiameters.Keys;
             var massSumRow = 19;
-            foreach (var value in keys.Select(key => $"Ø{key} = {massPerDiameters[key]} kg"))
+
+
+            foreach (var massPerDiameter in massPerDiameters)
             {
-                sheet.GetRow(massSumRow).GetCell(3).SetCellValue(value);
+                var rowValue = $"Ø{massPerDiameter.Key} = {massPerDiameter.Value.Round(1)} kg";
+                sheet.GetRow(massSumRow).GetCell(3).SetCellValue(rowValue);
                 massSumRow++;
             }
 
@@ -213,7 +215,7 @@ namespace InvoiceApp
 
                 for (var j = 0; j < order.items.Count; j++)
                 {
-                    var itemRow = sheet.CreateRow(itemRowIndex);
+                    var itemRow = sheet.CreateRow(orderRowIndex);
                     var item = order.items[j];
 
                     itemRow.CreateCell(1).SetCellValue(item.id);
@@ -237,10 +239,8 @@ namespace InvoiceApp
                     itemRow.CreateCell(7).SetCellValue(item.TotalMass);
                     itemRow.GetCell(7).CellStyle = cellStyle;
 
-                    itemRowIndex++;
+                    orderRowIndex++;
                 }
-
-                orderRowIndex += order.items.Count + 1;
             }
 
             // Сохранение документа Excel
