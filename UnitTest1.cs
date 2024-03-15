@@ -170,11 +170,11 @@ namespace InvoiceApp
             sheet.GetRow(5).GetCell(2).SetCellValue(invoiceData.vendor.pib);
             //sheet.GetRow(3).GetCell(2).SetCellValue(invoiceData.customer. );
 
-            sheet.GetRow(1).GetCell(6).SetCellValue(invoiceData.customer.name);
-            sheet.GetRow(2).GetCell(6).SetCellValue(invoiceData.customer.address);
-            sheet.GetRow(3).GetCell(6).SetCellValue(invoiceData.customer.place);
-            sheet.GetRow(4).GetCell(6).SetCellValue(invoiceData.customer.pib);
-            sheet.GetRow(5).GetCell(6).SetCellValue(invoiceData.customer.pdv);
+            sheet.GetRow(1).GetCell(7).SetCellValue(invoiceData.customer.name);
+            sheet.GetRow(2).GetCell(7).SetCellValue(invoiceData.customer.address);
+            sheet.GetRow(3).GetCell(7).SetCellValue(invoiceData.customer.place);
+            sheet.GetRow(4).GetCell(7).SetCellValue(invoiceData.customer.pib);
+            sheet.GetRow(5).GetCell(7).SetCellValue(invoiceData.customer.pdv);
 
             var orderRowIndex = 16;
 
@@ -191,16 +191,22 @@ namespace InvoiceApp
             }
 
             //creating style
-            var cellStyle = workbook.CreateCellStyle();
-            cellStyle.BorderTop = BorderStyle.Thin;
-            cellStyle.BorderBottom = BorderStyle.Thin;
-            cellStyle.BorderLeft = BorderStyle.Thin;
-            cellStyle.BorderRight = BorderStyle.Thin;
+            var itemCellStyle = workbook.CreateCellStyle();
+            itemCellStyle.BorderTop = BorderStyle.Thin;
+            itemCellStyle.BorderBottom = BorderStyle.Thin;
+            itemCellStyle.BorderLeft = BorderStyle.Thin;
+            itemCellStyle.BorderRight = BorderStyle.Thin;
+
+            //var orderCellStyle = workbook.CreateCellStyle();
+            //orderCellStyle.BorderTop = BorderStyle.Thin;
+            //orderCellStyle.BorderBottom = BorderStyle.Thin;
+            //orderCellStyle.BorderLeft = BorderStyle.Thin;
+            //orderCellStyle.BorderRight = BorderStyle.Thin;
 
             // inserting new rows
             var firstRow = orderRowIndex;
             var newRowsNumber = invoiceData.orders.Count + invoiceData.orders.Sum(order => order.items.Count);
-            var secondRow = orderRowIndex + newRowsNumber; // Вместо 100 вставить кол-во всех позиций
+            var secondRow = orderRowIndex + newRowsNumber;
             sheet.ShiftRows(firstRow, secondRow, newRowsNumber, true, false);
 
             // filling cells
@@ -210,34 +216,33 @@ namespace InvoiceApp
                 var orderNameCell = sheet.CreateRow(orderRowIndex).CreateCell(1);
                 orderNameCell.SetCellValue(order.name);
                 orderRowIndex++;
-                orderNameCell.CellStyle = cellStyle;
+                orderNameCell.CellStyle = itemCellStyle;
                 orderNameCell.CellStyle.Alignment = HorizontalAlignment.Center;
 
-                for (var j = 0; j < order.items.Count; j++)
+                foreach (var item in order.items)
                 {
                     var itemRow = sheet.CreateRow(orderRowIndex);
-                    var item = order.items[j];
 
                     itemRow.CreateCell(1).SetCellValue(item.id);
-                    itemRow.GetCell(1).CellStyle = cellStyle;
+                    itemRow.GetCell(1).CellStyle = itemCellStyle;
 
-                    itemRow.CreateCell(2).SetCellValue(item.diameter);
-                    itemRow.GetCell(2).CellStyle = cellStyle;
+                    itemRow.CreateCell(3).SetCellValue(item.diameter);
+                    itemRow.GetCell(3).CellStyle = itemCellStyle;
 
-                    itemRow.CreateCell(3).SetCellValue(item.lengthPerItem);
-                    itemRow.GetCell(3).CellStyle = cellStyle;
+                    itemRow.CreateCell(4).SetCellValue(item.lengthPerItem);
+                    itemRow.GetCell(4).CellStyle = itemCellStyle;
 
-                    itemRow.CreateCell(4).SetCellValue(item.amount);
-                    itemRow.GetCell(4).CellStyle = cellStyle;
+                    itemRow.CreateCell(5).SetCellValue(item.amount);
+                    itemRow.GetCell(5).CellStyle = itemCellStyle;
 
-                    itemRow.CreateCell(5).SetCellValue(item.TotalLength);
-                    itemRow.GetCell(5).CellStyle = cellStyle;
+                    itemRow.CreateCell(6).SetCellValue(item.TotalLength);
+                    itemRow.GetCell(6).CellStyle = itemCellStyle;
 
-                    itemRow.CreateCell(6).SetCellValue(item.massPerMeter);
-                    itemRow.GetCell(6).CellStyle = cellStyle;
+                    itemRow.CreateCell(7).SetCellValue(item.massPerMeter);
+                    itemRow.GetCell(7).CellStyle = itemCellStyle;
                     
-                    itemRow.CreateCell(7).SetCellValue(item.TotalMass);
-                    itemRow.GetCell(7).CellStyle = cellStyle;
+                    itemRow.CreateCell(8).SetCellValue(item.TotalMass);
+                    itemRow.GetCell(8).CellStyle = itemCellStyle;
 
                     orderRowIndex++;
                 }
