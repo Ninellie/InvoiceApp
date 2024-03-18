@@ -1,18 +1,40 @@
-using System.Data.Common;
-using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using NPOI.SS.Util;
-using NPOI.HSSF.Util;
 using CsvHelper;
 using System.Globalization;
+using System.Net.Http.Headers;
 using MathNet.Numerics;
-using NPOI.POIFS.Crypt;
+using Org.BouncyCastle.Bcpg.OpenPgp;
 
 namespace InvoiceApp
 {
     public class InvoiceData
     {
+        private const string url = $"https://api.notion.com/v1/pages/";
+        
+
+
+        public InvoiceData(string notionInvoiceId)
+        {
+            var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri(url);
+            httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", "secret_74mFx9yBNqyRcS3usQAIorfOWTiUv0GcIE0oPHo7U9J");
+
+
+            static async Task GetAsync(HttpClient httpClient)
+            {
+                using HttpResponseMessage response = await httpClient.GetAsync($"https://api.notion.com/v1/pages/")
+
+                response.EnsureSuccessStatusCode();
+
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+            }
+
+
+
+        }
+
         public ParticipantData customer = new()
         {
             name = "customer name",
