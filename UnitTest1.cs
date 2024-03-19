@@ -1,61 +1,53 @@
+using System.ComponentModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using CsvHelper;
 using System.Globalization;
-using System.Net.Http.Headers;
+using System.Net;
 using MathNet.Numerics;
-using Org.BouncyCastle.Bcpg.OpenPgp;
+using Newtonsoft.Json;
 
 namespace InvoiceApp
 {
+    public class InvoiceDataResponse
+    {
+        [JsonProperty("properties")]
+        public InvoiceData Properties { get; set; }
+    }
+
+    public class ItemDataResponse
+    {
+        [JsonProperty("properties")]
+        public ItemData Properties { get; set; }
+    }
+    
     public class InvoiceData
     {
-        private const string url = $"https://api.notion.com/v1/pages/";
         
+        private static HttpClient _httpClient;
+        
+        public ParticipantData Customer { get; set; }
+        public ParticipantData Vendor { get; set; }
 
+        public string Id { get; set; }
+        public string Date { get; set; }
 
-        public InvoiceData(string notionInvoiceId)
+        [JsonProperty("Номер")]
+        public string Number { get; set; }
+
+        public List<OrderData> Orders { get; set; }
+
+        public class ItemPositionNotionData
         {
-            var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(url);
-            httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", "secret_74mFx9yBNqyRcS3usQAIorfOWTiUv0GcIE0oPHo7U9J");
-
-
-            static async Task GetAsync(HttpClient httpClient)
-            {
-                using HttpResponseMessage response = await httpClient.GetAsync($"https://api.notion.com/v1/pages/")
-
-                response.EnsureSuccessStatusCode();
-
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-            }
-
-
-
+            [JsonProperty("relation")] public NotionRelation[] NotionRelation { get; set; }
         }
 
-        public ParticipantData customer = new()
+        public class NotionRelation
         {
-            name = "customer name",
-            address = "customer address",
-            place = "customer place",
-            pib = "customer pib",
-            pdv = "customer pdv"
-        };
+            [JsonProperty("id")] public string PageId { get; set; }
+        }
 
-        public ParticipantData vendor = new()
-        {
-            name = "vendor name",
-            address = "vendor address",
-            place = "vendor place",
-            pib = "vendor pib",
-            pdv = "vendor pdv"
-        };
-
-        public string id;
-        public string date;
-        public List<OrderData> orders;
+        [JsonProperty("Позиции")] public ItemPositionNotionData PositionsNotionData { get; set; }
 
         public Dictionary<int, double> MassPerDiameters => GetMassPerDiameters();
 
@@ -64,7 +56,7 @@ namespace InvoiceApp
         {
             var dictionary = new Dictionary<int, double>();
 
-            foreach (OrderData order in orders)
+            foreach (OrderData order in Orders)
             {
                 foreach (ItemData item in order.items)
                 {
@@ -98,83 +90,76 @@ namespace InvoiceApp
 
     public class ItemData
     {
-        public int id { get; set; } // order in techObject
-        public int diameter { get; set; } // millimeters
-        public double lengthPerItem { get; set; } // meters
-        public int amount { get; set; }
+        [JsonProperty("Id"))] public int id { get; set; } // order in techObject
+        [JsonProperty("Ø")] public int diameter { get; set; } // millimeters
+        [JsonProperty("м/ед")] public double lengthPerItem { get; set; } // meters
+        [JsonProperty("Ед")] public int amount { get; set; }
         public double TotalLength => lengthPerItem * amount;
-        public double massPerMeter { get; set; } // kg
+        [JsonProperty("Кг/м")] public double massPerMeter { get; set; } // kg
         public double TotalMass => massPerMeter * lengthPerItem * amount;
         //
-        public string TechObject { get; set; }
-    }
-
-    public class RawItemData
-    {
-        public int Id { get; set; }
-        public int Diameter { get; set; }
-        public double LengthPerItem { get; set; }
-        public int Amount { get; set; }
+        [JsonProperty("TechObject")] public string TechObject { get; set; }
     }
 
     public class UnitTest1
     {
         [Fact]
-        public void Test1()
+        public async Task Test1()
         {
+            var token = Environment.GetEnvironmentVariable("Notion__Token") ?? throw new InvalidOperationException("Notion token is missing");
+
             // Reading csv file
-            var records = new List<ItemData>();
-            using (var reader = new StreamReader(@"C:\Users\apawl\Documents\InvoiceDocs\InvoiceData.csv"))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
-            {
-                csv.Read();
-                csv.ReadHeader();
-                while (csv.Read())
-                {
-                    var record = new ItemData
-                    {
-                         id = csv.GetField<int>("Id"),
-                         diameter = csv.GetField<int>("Ø"),
-                         lengthPerItem = csv.GetField<double>("м/ед"),
-                         amount = csv.GetField<int>("Ед"),
-                         massPerMeter = csv.GetField<double>("Кг/м"),
-                         TechObject = csv.GetField<string>("TechObject"),
-                    };
-                    records.Add(record);
-                }
-            }
+            //var records = new List<ItemData>();
+            //using (var reader = new StreamReader(@"C:\Users\apawl\Documents\InvoiceDocs\InvoiceData.csv"))
+            //using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            //{
+            //    csv.Read();
+            //    csv.ReadHeader();
+            //    while (csv.Read())
+            //    {
+            //        var record = new ItemData
+            //        {
+            //             id = csv.GetField<int>("Id"),
+            //             diameter = csv.GetField<int>("Ø"),
+            //             lengthPerItem = csv.GetField<double>("м/ед"),
+            //             amount = csv.GetField<int>("Ед"),
+            //             massPerMeter = csv.GetField<double>("Кг/м"),
+            //             TechObject = csv.GetField<string>("TechObject"),
+            //        };
+            //        records.Add(record);
+            //    }
+            //}
             
             // Создание класса данных
-            var invoiceData = new InvoiceData
-            {
-                orders = new List<OrderData>()
-            };
+
+            var invoiceItemId = $"2e33e7a86e154fb48376347ec8fb09c4";
+            var invoiceData = new InvoiceData(invoiceItemId);
 
             // Заполнение класса накладной позициями из прочитанного csv файла
-            foreach (var itemData in records)
-            {
-                var orderExist = false;
-                foreach (var invoiceDataOrder in invoiceData.orders)
-                {
-                    if (invoiceDataOrder.name != itemData.TechObject) continue;
-                    invoiceDataOrder.items.Add(itemData);
-                    orderExist = true;
-                    break;
-                }
+            //foreach (var itemData in records)
+            //{
+            //    var orderExist = false;
+            //    foreach (var invoiceDataOrder in invoiceData.orders)
+            //    {
+            //        if (invoiceDataOrder.name != itemData.TechObject) continue;
+            //        invoiceDataOrder.items.Add(itemData);
+            //        orderExist = true;
+            //        break;
+            //    }
 
-                if (orderExist)
-                {
-                    continue;
-                }
+            //    if (orderExist)
+            //    {
+            //        continue;
+            //    }
 
-                var addedOrder = new OrderData
-                {
-                    name = itemData.TechObject,
-                    items = new List<ItemData> { itemData },
-                };
+            //    var addedOrder = new OrderData
+            //    {
+            //        name = itemData.TechObject,
+            //        items = new List<ItemData> { itemData },
+            //    };
 
-                invoiceData.orders.Add(addedOrder);
-            }
+            //    invoiceData.orders.Add(addedOrder);
+            //}
 
             // Открытие существующей рабочей книги
             IWorkbook workbook;
@@ -186,17 +171,17 @@ namespace InvoiceApp
             // Создание нового листа
             var sheet = workbook.CloneSheet(0);
 
-            sheet.GetRow(1).GetCell(2).SetCellValue(invoiceData.vendor.name);
-            sheet.GetRow(2).GetCell(2).SetCellValue(invoiceData.vendor.address);
-            sheet.GetRow(4).GetCell(2).SetCellValue(invoiceData.vendor.place);
-            sheet.GetRow(5).GetCell(2).SetCellValue(invoiceData.vendor.pib);
+            sheet.GetRow(1).GetCell(2).SetCellValue(invoiceData.Vendor.name);
+            sheet.GetRow(2).GetCell(2).SetCellValue(invoiceData.Vendor.address);
+            sheet.GetRow(4).GetCell(2).SetCellValue(invoiceData.Vendor.place);
+            sheet.GetRow(5).GetCell(2).SetCellValue(invoiceData.Vendor.pib);
             //sheet.GetRow(3).GetCell(2).SetCellValue(invoiceData.customer. );
 
-            sheet.GetRow(1).GetCell(7).SetCellValue(invoiceData.customer.name);
-            sheet.GetRow(2).GetCell(7).SetCellValue(invoiceData.customer.address);
-            sheet.GetRow(3).GetCell(7).SetCellValue(invoiceData.customer.place);
-            sheet.GetRow(4).GetCell(7).SetCellValue(invoiceData.customer.pib);
-            sheet.GetRow(5).GetCell(7).SetCellValue(invoiceData.customer.pdv);
+            sheet.GetRow(1).GetCell(7).SetCellValue(invoiceData.Customer.name);
+            sheet.GetRow(2).GetCell(7).SetCellValue(invoiceData.Customer.address);
+            sheet.GetRow(3).GetCell(7).SetCellValue(invoiceData.Customer.place);
+            sheet.GetRow(4).GetCell(7).SetCellValue(invoiceData.Customer.pib);
+            sheet.GetRow(5).GetCell(7).SetCellValue(invoiceData.Customer.pdv);
 
             var orderRowIndex = 16;
 
@@ -227,14 +212,14 @@ namespace InvoiceApp
 
             // inserting new rows
             var firstRow = orderRowIndex;
-            var newRowsNumber = invoiceData.orders.Count + invoiceData.orders.Sum(order => order.items.Count);
+            var newRowsNumber = invoiceData.Orders.Count + invoiceData.Orders.Sum(order => order.items.Count);
             var secondRow = orderRowIndex + newRowsNumber;
             sheet.ShiftRows(firstRow, secondRow, newRowsNumber, true, false);
 
             // filling cells
-            for (int i = 0; i < invoiceData.orders.Count; i++)
+            for (int i = 0; i < invoiceData.Orders.Count; i++)
             {
-                var order = invoiceData.orders[i];
+                var order = invoiceData.Orders[i];
                 var orderNameCell = sheet.CreateRow(orderRowIndex).CreateCell(1);
                 orderNameCell.SetCellValue(order.name);
                 orderRowIndex++;
