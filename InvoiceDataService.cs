@@ -3,6 +3,21 @@ using Newtonsoft.Json;
 
 namespace InvoiceApp;
 
+
+
+public class NotionInvoiceData
+{
+    [JsonProperty("properties")]
+    public NotionInvoiceProperties Properties { get; set; }
+}
+
+public class NotionInvoiceProperties
+{
+    [JsonProperty("Номер")] public string Id { get; set; }
+    [JsonProperty("Дата")] public string Date { get; set; }
+}
+
+
 public class InvoiceDataService
 {
     private const string Url = $"https://api.notion.com/v1/pages/";
@@ -18,11 +33,7 @@ public class InvoiceDataService
     public InvoiceData GetInvoice(string pageId)
     {
         var invoiceData = GetInvoicePropertiesAsync(pageId).Result;
-
-        // получить предметы
-
         var records = new List<ItemData>();
-            
     }
 
     private async Task<InvoiceData> GetInvoicePropertiesAsync(string pageId)
@@ -30,7 +41,7 @@ public class InvoiceDataService
         using var response = await _httpClient.GetAsync(Url + pageId);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
-        var invoice = JsonConvert.DeserializeObject<InvoiceDataResponse>(content)
+        var invoice = JsonConvert.DeserializeObject<NotionInvoiceData>(content)
                       ?? throw new InvalidOperationException("Deseralization null");
         return invoice.Properties;
     }
@@ -40,7 +51,7 @@ public class InvoiceDataService
         using var response = await _httpClient.GetAsync(Url + pageId);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
-        var invoice = JsonConvert.DeserializeObject<InvoiceDataResponse>(content)
+        var invoice = JsonConvert.DeserializeObject<NotionInvoiceData>(content)
                       ?? throw new InvalidOperationException("Deseralization null");
         return invoice.Properties;
     }

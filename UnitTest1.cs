@@ -9,13 +9,8 @@ using Newtonsoft.Json;
 
 namespace InvoiceApp
 {
-    public class InvoiceDataResponse
-    {
-        [JsonProperty("properties")]
-        public InvoiceData Properties { get; set; }
-    }
 
-    public class ItemDataResponse
+    public class NotionItemData
     {
         [JsonProperty("properties")]
         public ItemData Properties { get; set; }
@@ -23,21 +18,15 @@ namespace InvoiceApp
     
     public class InvoiceData
     {
-        
-        private static HttpClient _httpClient;
-        
         public ParticipantData Customer { get; set; }
         public ParticipantData Vendor { get; set; }
 
-        public string Id { get; set; }
-        public string Date { get; set; }
-
-        [JsonProperty("Номер")]
-        public string Number { get; set; }
+        [JsonProperty("Номер")] public string Id { get; set; }
+        [JsonProperty("Номер")] public string Date { get; set; }
 
         public List<OrderData> Orders { get; set; }
 
-        public class ItemPositionNotionData
+        public class NotionItemPositionData
         {
             [JsonProperty("relation")] public NotionRelation[] NotionRelation { get; set; }
         }
@@ -47,7 +36,7 @@ namespace InvoiceApp
             [JsonProperty("id")] public string PageId { get; set; }
         }
 
-        [JsonProperty("Позиции")] public ItemPositionNotionData PositionsNotionData { get; set; }
+        [JsonProperty("Позиции")] public NotionItemPositionData PositionsData { get; set; }
 
         public Dictionary<int, double> MassPerDiameters => GetMassPerDiameters();
 
