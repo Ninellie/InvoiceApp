@@ -46,12 +46,13 @@ public class InvoiceDataService
 {
     private const string Url = $"https://api.notion.com/v1/pages/";
     private readonly HttpClient _httpClient;
+
+    #region Constructor
     public InvoiceDataService(HttpClient httpClient, string token, string notionVersion)
     {
         _httpClient = httpClient;
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         _httpClient.DefaultRequestHeaders.Add($"Notion-Version", notionVersion);
-        //_httpClient.DefaultRequestHeaders.Add($"Notion-Version", $"2022-06-28");
     }
 
     public InvoiceDataService(HttpClient httpClient)
@@ -60,10 +61,12 @@ public class InvoiceDataService
             httpClient, 
             Environment.GetEnvironmentVariable("Notion__Token")
             ?? throw new InvalidOperationException("Notion token is missing"),
-
+            $"2022-06-28"
         )
     {
     }
+
+    #endregion
 
     public InvoiceData GetInvoice(string pageId)
     {
