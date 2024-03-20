@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-
 namespace InvoiceApp
 {
     public class InvoiceData
@@ -53,15 +51,15 @@ namespace InvoiceApp
 
     public class ItemData
     {
-        [JsonProperty("Id")] public int id { get; set; } // order in techObject
-        [JsonProperty("Ø")] public int diameter { get; set; } // millimeters
-        [JsonProperty("м/ед")] public double lengthPerItem { get; set; } // meters
-        [JsonProperty("Ед")] public int amount { get; set; }
+        public int id { get; set; } // order in techObject
+        public int diameter { get; set; } // millimeters
+        public double lengthPerItem { get; set; } // meters
+        public int amount { get; set; }
         public double TotalLength => lengthPerItem * amount;
-        [JsonProperty("Кг/м")] public double massPerMeter { get; set; } // kg
+        public double massPerMeter { get; set; } // kg
         public double TotalMass => massPerMeter * lengthPerItem * amount;
         //
-        [JsonProperty("TechObject")] public string TechObject { get; set; }
+        public string TechObject { get; set; }
     }
 
     public class UnitTest1
@@ -71,34 +69,10 @@ namespace InvoiceApp
         {
             var invoiceItemId = $"2e33e7a86e154fb48376347ec8fb09c4";
             var httpClient = new HttpClient();
-
             var invoiceDataService = new InvoiceDataService(httpClient);
-            invoiceDataService.GetInvoice(invoiceItemId);
-            // Заполнение класса накладной позициями из прочитанного csv файла
-            //foreach (var itemData in records)
-            //{
-            //    var orderExist = false;
-            //    foreach (var invoiceDataOrder in invoiceData.orders)
-            //    {
-            //        if (invoiceDataOrder.name != itemData.TechObject) continue;
-            //        invoiceDataOrder.items.Add(itemData);
-            //        orderExist = true;
-            //        break;
-            //    }
-
-            //    if (orderExist)
-            //    {
-            //        continue;
-            //    }
-
-            //    var addedOrder = new OrderData
-            //    {
-            //        name = itemData.TechObject,
-            //        items = new List<ItemData> { itemData },
-            //    };
-
-            //    invoiceData.orders.Add(addedOrder);
-            //}
+            var invoiceData = invoiceDataService.GetInvoice(invoiceItemId);
+            var documentCreator = new InvoiceExcelCreator();
+            documentCreator.CreateInvoice(invoiceData);
         }
     }
 }

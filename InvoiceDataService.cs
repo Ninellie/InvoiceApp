@@ -1,57 +1,7 @@
 using System.Net.Http.Headers;
-using Newtonsoft.Json;
 using Notion.Client;
 
 namespace InvoiceApp;
-
-public class NotionInvoiceData
-{
-    [JsonProperty("properties")] public NotionInvoiceProperties Properties { get; set; }
-}
-
-public class NotionInvoiceProperties
-{
-    [JsonProperty("Номер")] public NotionRichText Id { get; set; }
-    [JsonProperty("Дата")] public NotionDateObject DateObject { get; set; }
-    [JsonProperty("Позиции")] public NotionRelationList ItemList { get; set; }
-}
-
-public class NotionRichText
-{
-    [JsonProperty("rich_text")] public NotionRichTextProperties[] RichText { get; set; }
-}
-
-public class NotionRichTextProperties
-{
-    [JsonProperty("plain_text")] public string Text { get; set; }
-}
-
-public class NotionDateObject
-{
-    [JsonProperty("date")] public NotionDate Date { get; set; }
-}
-
-public class NotionDate
-{
-    [JsonProperty("start")] public string Start { get; set; }
-    [JsonProperty("end")] public string End { get; set; }
-}
-
-public class NotionRelationList
-{
-    [JsonProperty("relation")] public NotionRelation[] NotionRelation { get; set; }
-}
-
-public class NotionRelation
-{
-    [JsonProperty("id")] public string PageId { get; set; }
-}
-
-public class NotionItemData
-{
-    [JsonProperty("properties")]
-    public ItemData Properties { get; set; }
-}
 
 public class InvoiceDataService
 {
@@ -99,6 +49,14 @@ public class InvoiceDataService
                 var idList = new List<string>(relations.Count);
                 idList.AddRange(relations.Select(objectId => objectId.Id));
                 return idList;
+            case NumberPropertyValue numberPropertyValue:
+                return numberPropertyValue.Number.Value;
+            case TitlePropertyValue titlePropertyValue:
+                return titlePropertyValue.Title.FirstOrDefault().PlainText;
+            case SelectPropertyValue selectPropertyValue:
+                return selectPropertyValue.Select.Name;
+            case FormulaPropertyValue formulaPropertyValue:
+                return formulaPropertyValue.Formula.String;
             default:
                 return null;
         }
@@ -107,8 +65,8 @@ public class InvoiceDataService
     public InvoiceData GetInvoice(string pageId)
     {
         // Получение страницу накладной
-        var invoiceData = GetInvoicePageAsync(pageId).Result;
-        var properties = invoiceData.Properties;
+        var invoicePage = GetInvoicePageAsync(pageId).Result;
+        var properties = invoicePage.Properties;
         
         var date = GetPropertyValue(properties[$"Дата"]).ToString();
         var invoiceId = GetPropertyValue(properties[$"Номер"]).ToString();
@@ -116,21 +74,65 @@ public class InvoiceDataService
 
         // Получение позиций накладной
         var items = new List<ItemData>();
+
         foreach (var id in relations)
         {
             var page = GetInvoicePageAsync(id).Result;
+            var idProperty = GetPropertyValue(page.Properties[$"Id"]).ToString();
+            var itemId = int.Parse(idProperty);
+            var diameterProperty = GetPropertyValue(page.Properties[$"Ø"]).ToString();
+            var diameter = int.Parse(diameterProperty);
+            var lengthPerItem = (double)GetPropertyValue(page.Properties[$"м/ед"]);
+            var amount = Convert.ToInt32((double)GetPropertyValue(page.Properties[$"Ед"]));
+            var massPerMeter = (double)GetPropertyValue(page.Properties[$"Кг/м"]);
+            var TechObject = (string)GetPropertyValue(page.Properties[$"TechObject"]);
 
-
-
-            var item = new ItemData();
+            var item = new ItemData
+            {
+                id = itemId,
+                diameter = diameter,
+                lengthPerItem = lengthPerItem,
+                amount = amount,
+                massPerMeter = massPerMeter,
+                TechObject = TechObject
+            };
+            items.Add(item);
         }
 
-        var invoice = new InvoiceData()
+        var invoiceData = new InvoiceData()
         {
             Date = date,
             Id = invoiceId,
+            Orders = new List<OrderData>()
         };
-        return invoice;
+        
+        // Разбор позиций по заказам
+        foreach (var itemData in items)
+        {
+            var orderExist = false;
+            foreach (var invoiceDataOrder in invoiceData.Orders)
+            {
+                if (invoiceDataOrder.name != itemData.TechObject) continue;
+                invoiceDataOrder.items.Add(itemData);
+                orderExist = true;
+                break;
+            }
+
+            if (orderExist)
+            {
+                continue;
+            }
+
+            var addedOrder = new OrderData
+            {
+                name = itemData.TechObject,
+                items = new List<ItemData> { itemData },
+            };
+
+            invoiceData.Orders.Add(addedOrder);
+        }
+
+        return invoiceData;
     }
 
     private async Task<Page> GetInvoicePageAsync(string pageId)
@@ -138,25 +140,4 @@ public class InvoiceDataService
         var invData = await _notionClient.Pages.RetrieveAsync(pageId);
         return invData;
     }
-
-
-    private async Task<NotionInvoiceProperties> GetInvoicePropertiesAsync(string pageId)
-    {
-        using var response = await _httpClient.GetAsync(Url + pageId);
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync();
-        var invoice = JsonConvert.DeserializeObject<NotionInvoiceData>(content)
-                      ?? throw new InvalidOperationException("Deseralization null");
-        return invoice.Properties;
-    }
-
-    //private async Task<InvoiceData> GetPositionPropertiesAsync(string pageId)
-    //{
-    //    using var response = await _httpClient.GetAsync(Url + pageId);
-    //    response.EnsureSuccessStatusCode();
-    //    var content = await response.Content.ReadAsStringAsync();
-    //    var invoice = JsonConvert.DeserializeObject<NotionInvoiceData>(content)
-    //                  ?? throw new InvalidOperationException("Deseralization null");
-    //    return invoice.Properties;
-    //}
 }

@@ -6,11 +6,25 @@ namespace InvoiceApp;
 
 public class InvoiceExcelCreator
 {
+    private string _defaultDocumentPath;
+
+    #region Constructor
+
+    public InvoiceExcelCreator(string defaultDocumentPath)
+    {
+        _defaultDocumentPath = defaultDocumentPath;
+    }
+
+    public InvoiceExcelCreator() : this(@"C:\Users\apawl\Documents\InvoiceDocs\invoice.xlsx")
+    {}
+
+    #endregion
+
     public void CreateInvoice(InvoiceData invoiceData)
     {
         // Открытие существующей рабочей книги
         IWorkbook workbook;
-        using (FileStream fileStream = new FileStream(@"C:\Users\apawl\Documents\InvoiceDocs\invoice.xlsx", FileMode.Open, FileAccess.ReadWrite))
+        using (FileStream fileStream = new FileStream(_defaultDocumentPath, FileMode.Open, FileAccess.ReadWrite))
         {
             workbook = new XSSFWorkbook(fileStream);
         }
