@@ -3,20 +3,44 @@ using Newtonsoft.Json;
 
 namespace InvoiceApp;
 
-
-
 public class NotionInvoiceData
 {
-    [JsonProperty("properties")]
-    public NotionInvoiceProperties Properties { get; set; }
+    [JsonProperty("properties")] public NotionInvoiceProperties Properties { get; set; }
 }
 
 public class NotionInvoiceProperties
 {
-    [JsonProperty("Номер")] public string Id { get; set; }
-    [JsonProperty("Дата")] public string Date { get; set; }
+    [JsonProperty("Номер")] public NotionRichText Id { get; set; }
+    [JsonProperty("Дата")] public NotionDate Date { get; set; }
+    [JsonProperty("Позиции")] public NotionRelationList ItemList { get; set; }
 }
 
+public class NotionRichText
+{
+    [JsonProperty("plain_text")] public string Text { get; set; }
+}
+
+public class NotionDate
+{
+    [JsonProperty("start")] public string Start { get; set; }
+    [JsonProperty("end")] public string End { get; set; }
+}
+
+public class NotionRelationList
+{
+    [JsonProperty("relation")] public NotionRelation[] NotionRelation { get; set; }
+}
+
+public class NotionRelation
+{
+    [JsonProperty("id")] public string PageId { get; set; }
+}
+
+public class NotionItemData
+{
+    [JsonProperty("properties")]
+    public ItemData Properties { get; set; }
+}
 
 public class InvoiceDataService
 {
@@ -30,13 +54,37 @@ public class InvoiceDataService
         //_httpClient.DefaultRequestHeaders.Add($"Notion-Version", $"2022-06-28");
     }
 
+    public InvoiceDataService(HttpClient httpClient)
+        : this
+        (
+            httpClient, 
+            Environment.GetEnvironmentVariable("Notion__Token")
+            ?? throw new InvalidOperationException("Notion token is missing"),
+
+        )
+    {
+    }
+
     public InvoiceData GetInvoice(string pageId)
     {
         var invoiceData = GetInvoicePropertiesAsync(pageId).Result;
-        var records = new List<ItemData>();
+
+        var date = invoiceData.Date.Start;
+        var invoiceId = invoiceData.Id.Text;
+        var notionItemRelations = invoiceData.ItemList;
+
+        //var records = new List<ItemData>(); todo вытянуть также и позиции из накладной
+
+
+        var invoice = new InvoiceData()
+        {
+            Date = date,
+            Id = invoiceId,
+        };
+        return invoice;
     }
 
-    private async Task<InvoiceData> GetInvoicePropertiesAsync(string pageId)
+    private async Task<NotionInvoiceProperties> GetInvoicePropertiesAsync(string pageId)
     {
         using var response = await _httpClient.GetAsync(Url + pageId);
         response.EnsureSuccessStatusCode();
@@ -46,13 +94,13 @@ public class InvoiceDataService
         return invoice.Properties;
     }
 
-    private async Task<InvoiceData> GetPositionPropertiesAsync(string pageId)
-    {
-        using var response = await _httpClient.GetAsync(Url + pageId);
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync();
-        var invoice = JsonConvert.DeserializeObject<NotionInvoiceData>(content)
-                      ?? throw new InvalidOperationException("Deseralization null");
-        return invoice.Properties;
-    }
+    //private async Task<InvoiceData> GetPositionPropertiesAsync(string pageId)
+    //{
+    //    using var response = await _httpClient.GetAsync(Url + pageId);
+    //    response.EnsureSuccessStatusCode();
+    //    var content = await response.Content.ReadAsStringAsync();
+    //    var invoice = JsonConvert.DeserializeObject<NotionInvoiceData>(content)
+    //                  ?? throw new InvalidOperationException("Deseralization null");
+    //    return invoice.Properties;
+    //}
 }
