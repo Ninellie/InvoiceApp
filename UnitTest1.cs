@@ -53,7 +53,7 @@ namespace InvoiceApp
 
     public class ItemData
     {
-        [JsonProperty("Id"))] public int id { get; set; } // order in techObject
+        [JsonProperty("Id")] public int id { get; set; } // order in techObject
         [JsonProperty("Ø")] public int diameter { get; set; } // millimeters
         [JsonProperty("м/ед")] public double lengthPerItem { get; set; } // meters
         [JsonProperty("Ед")] public int amount { get; set; }
@@ -73,7 +73,7 @@ namespace InvoiceApp
             var httpClient = new HttpClient();
 
             var invoiceDataService = new InvoiceDataService(httpClient);
-
+            invoiceDataService.GetInvoice(invoiceItemId);
             // Заполнение класса накладной позициями из прочитанного csv файла
             //foreach (var itemData in records)
             //{
