@@ -38,12 +38,18 @@ public class InvoiceExcelCreator
         var massPerDiameters = invoiceData.MassPerDiameters;
         var massSumRow = 19; // todo удалить магические числа
 
+        var massAll = massPerDiameters.Values.Sum();
+
+        sheet.GetRow(19).GetCell(8).SetCellValue(massAll);
+
         foreach (var massPerDiameter in massPerDiameters)
         {
             var rowValue = $"Ø{massPerDiameter.Key} = {massPerDiameter.Value.Round(1)} kg";
             sheet.GetRow(massSumRow).GetCell(3).SetCellValue(rowValue);
             massSumRow++;
         }
+
+        
 
         //creating style
         var itemCellStyle = workbook.CreateCellStyle();
