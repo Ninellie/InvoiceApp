@@ -32,6 +32,19 @@ public class InvoiceExcelCreator
         // Создание нового листа
         var sheet = workbook.CloneSheet(0);
 
+
+        var invoiceNumberRowIndex = 9;
+        var invoiceNumberCellIndex = 4;
+        sheet.GetRow(invoiceNumberRowIndex).
+            GetCell(invoiceNumberCellIndex).
+            SetCellValue(invoiceData.Id);
+
+        var invoiceDateRowIndex = 11;
+        var invoiceDateCellIndex = 4;
+        sheet.GetRow(11).
+            GetCell(invoiceNumberCellIndex).
+            SetCellValue(invoiceData.Date);
+
         var orderRowIndex = 16; // todo удалить магические числа
 
         // Заполнение масс для каждого диаметра
@@ -48,8 +61,6 @@ public class InvoiceExcelCreator
             sheet.GetRow(massSumRow).GetCell(3).SetCellValue(rowValue);
             massSumRow++;
         }
-
-        
 
         //creating style
         var itemCellStyle = workbook.CreateCellStyle();
