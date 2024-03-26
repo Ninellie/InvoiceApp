@@ -1,4 +1,3 @@
-using InvoiceApp;
 using Service;
 
 namespace UnitTests
@@ -13,7 +12,19 @@ namespace UnitTests
             var invoiceDataService = new InvoiceDataService(httpClient);
             var invoiceData = invoiceDataService.GetInvoice(invoiceItemId);
             var documentCreator = new InvoiceExcelCreator();
-            //var invoiceDocument = documentCreator.CreateInvoice(invoiceData);
+            string? invoiceDocument = null;
+            try
+            {
+                invoiceDocument = documentCreator.CreateInvoice(invoiceData, "Templates/InvoiceTemplate.xlsx");
+            }
+            finally
+            {
+                if (invoiceDocument != null)
+                {
+                    File.Delete(invoiceDocument);
+                }
+            }
+            Assert.Equal("", invoiceDocument);
         }
     }
 }

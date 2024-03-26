@@ -7,25 +7,22 @@ namespace Service;
 
 public class InvoiceExcelCreator
 {
-    private string _defaultDocumentPath;
-
-    #region Constructor
-
-    public InvoiceExcelCreator(string defaultDocumentPath)
+    public string CreateInvoice(InvoiceData invoiceData, string templatePath)
     {
-        _defaultDocumentPath = defaultDocumentPath;
-    }
+        // TemplateInvoice.xlsx"
+        if (!File.Exists(templatePath))
+            throw new FileNotFoundException("Template not exist", templatePath);
 
-    public InvoiceExcelCreator() : this(@"C:\Users\apawl\Documents\InvoiceDocs\invoice.xlsx")
-    {}
+        var generatedFilePath = Path.GetTempFileName();
+        //var generatedFileName = $"Invoice_{invoiceData.Id}.xlsx";
+        //var generatedFilePath = Path.Combine(directoryPath, generatedFileName);
+        
+        // Make a copy of the template file.
+        //File.Copy(templatePath, generatedFilePath, true);
 
-    #endregion
-
-    public void CreateInvoice(InvoiceData invoiceData)
-    {
-        // Открытие существующей рабочей книги
+        // Open the copied template workbook. 
         IWorkbook workbook;
-        using (FileStream fileStream = new FileStream(_defaultDocumentPath, FileMode.Open, FileAccess.ReadWrite))
+        using (FileStream fileStream = new FileStream(templatePath, FileMode.Open, FileAccess.ReadWrite))
         {
             workbook = new XSSFWorkbook(fileStream);
         }
@@ -115,12 +112,13 @@ public class InvoiceExcelCreator
             }
         }
 
-        // Сохранение документа Excel
-        using (var fileStream = new FileStream(@"C:\Users\apawl\Documents\InvoiceDocs\invoice.xlsx", FileMode.Create))
+        // Save Excel document
+        using (var fileStream = new FileStream(generatedFilePath, FileMode.Create))
         {
             workbook.Write(fileStream);
         }
 
         //return path of created file
+        return generatedFilePath;
     }
 }
