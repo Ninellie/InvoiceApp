@@ -1,7 +1,8 @@
 using System.Net.Http.Headers;
+using InvoiceApp;
 using Notion.Client;
 
-namespace InvoiceApp;
+namespace Service;
 
 public class InvoiceDataService
 {
@@ -36,32 +37,6 @@ public class InvoiceDataService
     }
 
     #endregion
-    private object GetPropertyValue(PropertyValue p)
-    {
-        switch (p)
-        {
-            case RichTextPropertyValue richTextPropertyValue:
-                return richTextPropertyValue.RichText.FirstOrDefault()?.PlainText;
-            case DatePropertyValue datePropertyValue:
-                return datePropertyValue.Date.Start.Value.ToShortDateString();
-            case RelationPropertyValue relationPropertyValue:
-                var relations = relationPropertyValue.Relation;
-                var idList = new List<string>(relations.Count);
-                idList.AddRange(relations.Select(objectId => objectId.Id));
-                return idList;
-            case NumberPropertyValue numberPropertyValue:
-                return numberPropertyValue.Number.Value;
-            case TitlePropertyValue titlePropertyValue:
-                return titlePropertyValue.Title.FirstOrDefault().PlainText;
-            case SelectPropertyValue selectPropertyValue:
-                return selectPropertyValue.Select.Name;
-            case FormulaPropertyValue formulaPropertyValue:
-                return formulaPropertyValue.Formula.String;
-            default:
-                return null;
-        }
-    }
-
     public InvoiceData GetInvoice(string pageId)
     {
         // Получение страницу накладной
@@ -133,6 +108,32 @@ public class InvoiceDataService
         }
 
         return invoiceData;
+    }
+
+    private static object GetPropertyValue(PropertyValue p)
+    {
+        switch (p)
+        {
+            case RichTextPropertyValue richTextPropertyValue:
+                return richTextPropertyValue.RichText.FirstOrDefault()?.PlainText;
+            case DatePropertyValue datePropertyValue:
+                return datePropertyValue.Date.Start.Value.ToShortDateString();
+            case RelationPropertyValue relationPropertyValue:
+                var relations = relationPropertyValue.Relation;
+                var idList = new List<string>(relations.Count);
+                idList.AddRange(relations.Select(objectId => objectId.Id));
+                return idList;
+            case NumberPropertyValue numberPropertyValue:
+                return numberPropertyValue.Number.Value;
+            case TitlePropertyValue titlePropertyValue:
+                return titlePropertyValue.Title.FirstOrDefault().PlainText;
+            case SelectPropertyValue selectPropertyValue:
+                return selectPropertyValue.Select.Name;
+            case FormulaPropertyValue formulaPropertyValue:
+                return formulaPropertyValue.Formula.String;
+            default:
+                return null;
+        }
     }
 
     private async Task<Page> GetInvoicePageAsync(string pageId)

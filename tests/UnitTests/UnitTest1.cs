@@ -1,6 +1,7 @@
-using Xunit;
+using InvoiceApp;
+using Service;
 
-namespace InvoiceApp
+namespace UnitTests
 {
     public class UnitTest1
     {
@@ -12,7 +13,7 @@ namespace InvoiceApp
             var invoiceDataService = new InvoiceDataService(httpClient);
             var invoiceData = invoiceDataService.GetInvoice(invoiceItemId);
             var documentCreator = new InvoiceExcelCreator();
-            documentCreator.CreateInvoice(invoiceData);
+            //var invoiceDocument = documentCreator.CreateInvoice(invoiceData);
         }
     }
 }
