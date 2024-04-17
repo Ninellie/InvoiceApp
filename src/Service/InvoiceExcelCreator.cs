@@ -7,6 +7,13 @@ namespace Service;
 
 public class InvoiceExcelCreator
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="invoiceData"></param>
+    /// <param name="templatePath"></param>
+    /// <returns>Path of the created file</returns>
+    /// <exception cref="FileNotFoundException"></exception>
     public string CreateInvoice(InvoiceData invoiceData, string templatePath)
     {
         // TemplateInvoice.xlsx"
@@ -14,11 +21,6 @@ public class InvoiceExcelCreator
             throw new FileNotFoundException("Template not exist", templatePath);
 
         var generatedFilePath = Path.GetTempFileName();
-        //var generatedFileName = $"Invoice_{invoiceData.Id}.xlsx";
-        //var generatedFilePath = Path.Combine(directoryPath, generatedFileName);
-        
-        // Make a copy of the template file.
-        //File.Copy(templatePath, generatedFilePath, true);
 
         // Open the copied template workbook. 
         IWorkbook workbook;
@@ -29,7 +31,6 @@ public class InvoiceExcelCreator
 
         // Создание нового листа
         var sheet = workbook.CloneSheet(0);
-
 
         var invoiceNumberRowIndex = 9;
         var invoiceNumberCellIndex = 4;
@@ -70,8 +71,12 @@ public class InvoiceExcelCreator
         // inserting new rows
         var firstRow = orderRowIndex;
         var newRowsNumber = invoiceData.Orders.Count + invoiceData.Orders.Sum(order => order.items.Count);
-        var secondRow = orderRowIndex + newRowsNumber;
-        sheet.ShiftRows(firstRow, secondRow, newRowsNumber, true, false);
+
+        if (newRowsNumber != 0)
+        { 
+            var secondRow = orderRowIndex + newRowsNumber;
+            sheet.ShiftRows(firstRow, secondRow, newRowsNumber, true, false);
+        }
 
         // filling cells
         for (int i = 0; i < invoiceData.Orders.Count; i++)

@@ -39,13 +39,13 @@ public class InvoiceDataService
     #endregion
     public InvoiceData GetInvoice(string pageId)
     {
-        // Получение страницу накладной
+        // Получение страницы накладной
         var invoicePage = GetInvoicePageAsync(pageId).Result;
         var properties = invoicePage.Properties;
         
-        var date = GetPropertyValue(properties[$"Дата"]).ToString();
-        var invoiceId = GetPropertyValue(properties[$"Номер"]).ToString();
-        var relations = GetPropertyValue(properties[$"Позиции"]) as List<string>;
+        var date = GetPropertyValue(properties[$"Date"]).ToString();
+        var invoiceId = GetPropertyValue(properties[$"Number"]).ToString();
+        var relations = GetPropertyValue(properties[$"Positions"]) as List<string>;
 
         // Получение позиций накладной
         var items = new List<ItemData>();
