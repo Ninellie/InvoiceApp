@@ -43,9 +43,12 @@ public class InvoiceDataService
         var invoicePage = GetInvoicePageAsync(pageId).Result;
         var properties = invoicePage.Properties;
         
-        var date = GetPropertyValue(properties[$"Date"]).ToString();
-        var invoiceId = GetPropertyValue(properties[$"Number"]).ToString();
-        var relations = GetPropertyValue(properties[$"Positions"]) as List<string>;
+        var config = new InvoiceDataPropertySettings();
+        var date = GetPropertyValue(properties[config.Date]).ToString();
+        var invoiceId = GetPropertyValue(properties[config.Number]).ToString();
+        var relations = GetPropertyValue(properties[config.Positions]) as List<string>;
+
+        // todo Вставить куда-нибудь проверку на разные заказы
 
         // Получение позиций накладной
         var items = new List<ItemData>();
@@ -53,23 +56,23 @@ public class InvoiceDataService
         foreach (var id in relations)
         {
             var page = GetInvoicePageAsync(id).Result;
-            var idProperty = GetPropertyValue(page.Properties[$"Id"]).ToString();
+            var idProperty = GetPropertyValue(page.Properties[config.Id]).ToString();
             var itemId = int.Parse(idProperty);
-            var diameterProperty = GetPropertyValue(page.Properties[$"Ø"]).ToString();
+            var diameterProperty = GetPropertyValue(page.Properties[config.Diameter]).ToString();
             var diameter = int.Parse(diameterProperty);
-            var lengthPerItem = (double)GetPropertyValue(page.Properties[$"м/ед"]);
-            var amount = Convert.ToInt32((double)GetPropertyValue(page.Properties[$"Ед"]));
-            var massPerMeter = (double)GetPropertyValue(page.Properties[$"Кг/м"]);
-            var TechObject = (string)GetPropertyValue(page.Properties[$"TechObject"]);
+            var lengthPerItem = (double)GetPropertyValue(page.Properties[config.LengthPerItem]);
+            var amount = Convert.ToInt32((double)GetPropertyValue(page.Properties[config.Amount]));
+            var massPerMeter = (double)GetPropertyValue(page.Properties[config.MassPerMeter]);
+            var techObject = (string)GetPropertyValue(page.Properties[config.Object]);
 
             var item = new ItemData
             {
                 id = itemId,
                 diameter = diameter,
                 lengthPerItem = lengthPerItem,
-                amount = amount,
-                massPerMeter = massPerMeter,
-                TechObject = TechObject
+                Amount = amount,
+                MassPerMeter = massPerMeter,
+                TechObject = techObject
             };
             items.Add(item);
         }

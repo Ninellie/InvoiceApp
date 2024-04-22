@@ -1,4 +1,5 @@
 using Service;
+using System.Diagnostics;
 
 namespace UnitTests
 {
@@ -21,7 +22,8 @@ namespace UnitTests
             {
                 if (invoiceDocument != null)
                 {
-                    File.Delete(invoiceDocument);
+                    //File.Delete(invoiceDocument);
+                    Process.Start(invoiceDocument);
                 }
             }
             //Assert.Equal("", invoiceDocument);

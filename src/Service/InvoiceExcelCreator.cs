@@ -57,7 +57,10 @@ public class InvoiceExcelCreator
         foreach (var massPerDiameter in massPerDiameters)
         {
             var rowValue = $"Ø{massPerDiameter.Key} = {massPerDiameter.Value.Round(1)} kg";
-            sheet.GetRow(massSumRow).GetCell(3).SetCellValue(rowValue);
+            var massPerDiameterCell = sheet.CreateRow(massSumRow).CreateCell(3);
+            massPerDiameterCell.SetCellValue(rowValue);
+            
+            //sheet.GetRow(massSumRow).GetCell(3).SetCellValue(rowValue);
             massSumRow++;
         }
 
@@ -101,13 +104,13 @@ public class InvoiceExcelCreator
                 itemRow.CreateCell(4).SetCellValue(item.lengthPerItem);
                 itemRow.GetCell(4).CellStyle = itemCellStyle;
 
-                itemRow.CreateCell(5).SetCellValue(item.amount);
+                itemRow.CreateCell(5).SetCellValue(item.Amount);
                 itemRow.GetCell(5).CellStyle = itemCellStyle;
 
                 itemRow.CreateCell(6).SetCellValue(item.TotalLength);
                 itemRow.GetCell(6).CellStyle = itemCellStyle;
 
-                itemRow.CreateCell(7).SetCellValue(item.massPerMeter);
+                itemRow.CreateCell(7).SetCellValue(item.MassPerMeter);
                 itemRow.GetCell(7).CellStyle = itemCellStyle;
 
                 itemRow.CreateCell(8).SetCellValue(item.TotalMass);
