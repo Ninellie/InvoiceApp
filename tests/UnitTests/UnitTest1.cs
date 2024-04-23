@@ -22,11 +22,9 @@ namespace UnitTests
             {
                 if (invoiceDocument != null)
                 {
-                    //File.Delete(invoiceDocument);
-                    Process.Start(invoiceDocument);
+                    File.Delete(invoiceDocument);
                 }
             }
-            //Assert.Equal("", invoiceDocument);
         }
     }
 }
