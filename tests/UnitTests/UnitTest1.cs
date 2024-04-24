@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Service;
-using System.Diagnostics;
 
 namespace UnitTests
 {
@@ -8,9 +10,10 @@ namespace UnitTests
         [Fact]
         public async Task CreatingInvoiceTest()
         {
+            var factory = new WebApplicationFactory<Program>();
+            var options = factory.Services.GetRequiredService<IOptions<NotionOptions>>();
+            var invoiceDataService = new InvoiceDataService(options);
             var invoiceItemId = $"2e33e7a86e154fb48376347ec8fb09c4";
-            var httpClient = new HttpClient();
-            var invoiceDataService = new InvoiceDataService(httpClient);
             var invoiceData = invoiceDataService.GetInvoice(invoiceItemId);
             var documentCreator = new InvoiceExcelCreator();
             string? invoiceDocument = null;

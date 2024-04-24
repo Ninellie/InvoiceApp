@@ -1,39 +1,35 @@
-using System.Net.Http.Headers;
+using System.ComponentModel.DataAnnotations;
 using InvoiceApp;
+using Microsoft.Extensions.Options;
 using Notion.Client;
 
 namespace Service;
 
+public class NotionOptions
+{
+    [Required]
+    public string BaseUrl { get; set; }
+
+    [Required]
+    public string NotionVersion { get; set; }
+
+    [Required]
+    public string AuthToken { get; set; }
+}
+
 public class InvoiceDataService
 {
-    private const string Url = $"https://api.notion.com/v1/pages/";
-    private readonly HttpClient _httpClient;
     private readonly NotionClient _notionClient;
 
     #region Constructor
-    public InvoiceDataService(HttpClient httpClient, string token, string notionVersion)
+    public InvoiceDataService(IOptions<NotionOptions> options)
     {
-        _httpClient = httpClient;
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        _httpClient.DefaultRequestHeaders.Add($"Notion-Version", notionVersion);
-
         _notionClient = NotionClientFactory.Create(new ClientOptions
         {
-            AuthToken = token,
-            BaseUrl = Url,
-            NotionVersion = notionVersion
+            AuthToken = options.Value.AuthToken,
+            BaseUrl = options.Value.BaseUrl,
+            NotionVersion = options.Value.NotionVersion
         });
-    }
-
-    public InvoiceDataService(HttpClient httpClient)
-        : this
-        (
-            httpClient, 
-            Environment.GetEnvironmentVariable("Notion__Token")
-            ?? throw new InvalidOperationException("Notion token is missing"),
-            $"2022-06-28"
-        )
-    {
     }
 
     #endregion
@@ -44,9 +40,9 @@ public class InvoiceDataService
         var properties = invoicePage.Properties;
         
         var config = new InvoiceDataPropertySettings();
-        var date = GetPropertyValue(properties[config.Date]).ToString();
-        var invoiceId = GetPropertyValue(properties[config.Number]).ToString();
-        var relations = GetPropertyValue(properties[config.Positions]) as List<string>;
+        var date = GetPropValue(properties[config.Date]).ToString();
+        var invoiceId = GetPropValue(properties[config.Number]).ToString();
+        var relations = GetPropValue(properties[config.Positions]) as List<string>;
 
         // todo Вставить куда-нибудь проверку на разные заказы
 
@@ -56,14 +52,24 @@ public class InvoiceDataService
         foreach (var id in relations)
         {
             var page = GetInvoicePageAsync(id).Result;
-            var idProperty = GetPropertyValue(page.Properties[config.Id]).ToString();
+            var idProperty = GetPropValue(page.Properties[config.Id]).ToString();
             var itemId = int.Parse(idProperty);
-            var diameterProperty = GetPropertyValue(page.Properties[config.Diameter]).ToString();
-            var diameter = int.Parse(diameterProperty);
-            var lengthPerItem = (double)GetPropertyValue(page.Properties[config.LengthPerItem]);
-            var amount = Convert.ToInt32((double)GetPropertyValue(page.Properties[config.Amount]));
-            var massPerMeter = (double)GetPropertyValue(page.Properties[config.MassPerMeter]);
-            var techObject = (string)GetPropertyValue(page.Properties[config.Object]);
+            var diameter = 0;
+
+            if (GetPropValue(page.Properties[config.Diameter]) is List<string> diameterRelationProp)
+            {
+                var diameterPage = GetInvoicePageAsync(diameterRelationProp.First()).Result;
+                var diameterProperty = GetPropValue(diameterPage.Properties[config.DiameterTitle]).ToString();
+                if (diameterProperty != null)
+                {
+                    diameter = int.Parse(diameterProperty);
+                }
+            }
+
+            var lengthPerItem = (double)GetPropValue(page.Properties[config.LengthPerItem]);
+            var massPerMeter = (double)GetPropValue(page.Properties[config.MassPerMeter]); //!!!
+            var amount = Convert.ToInt32((double)GetPropValue(page.Properties[config.Amount]));
+            var techObject = (string)GetPropValue(page.Properties[config.Object]);
 
             var item = new ItemData
             {
@@ -113,12 +119,18 @@ public class InvoiceDataService
         return invoiceData;
     }
 
-    private static object GetPropertyValue(PropertyValue p)
+    private static object GetPropValue(PropertyValue p)
     {
         switch (p)
         {
+            case TitlePropertyValue titlePropertyValue:
+                return titlePropertyValue.Title.FirstOrDefault().PlainText;
             case RichTextPropertyValue richTextPropertyValue:
                 return richTextPropertyValue.RichText.FirstOrDefault()?.PlainText;
+            case NumberPropertyValue numberPropertyValue:
+                return numberPropertyValue.Number.Value;
+            case SelectPropertyValue selectPropertyValue:
+                return selectPropertyValue.Select.Name;
             case DatePropertyValue datePropertyValue:
                 return datePropertyValue.Date.Start.Value.ToShortDateString();
             case RelationPropertyValue relationPropertyValue:
@@ -126,15 +138,11 @@ public class InvoiceDataService
                 var idList = new List<string>(relations.Count);
                 idList.AddRange(relations.Select(objectId => objectId.Id));
                 return idList;
-            case NumberPropertyValue numberPropertyValue:
-                return numberPropertyValue.Number.Value;
-            case TitlePropertyValue titlePropertyValue:
-                return titlePropertyValue.Title.FirstOrDefault().PlainText;
-            case SelectPropertyValue selectPropertyValue:
-                return selectPropertyValue.Select.Name;
             case FormulaPropertyValue formulaPropertyValue:
                 return formulaPropertyValue.Formula.String;
-            default:
+            case RollupPropertyValue rollupPropertyValue:
+                return rollupPropertyValue.Rollup.Number.Value;
+                    default:
                 return null;
         }
     }

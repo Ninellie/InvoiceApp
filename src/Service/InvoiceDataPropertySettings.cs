@@ -7,6 +7,7 @@ public class InvoiceDataPropertySettings
     public string Positions { get; }
     public string Id { get; }
     public string Diameter { get; }
+    public string DiameterTitle { get; }
     public string LengthPerItem { get; }
     public string Amount { get; }
     public string MassPerMeter { get; }
@@ -19,9 +20,10 @@ public class InvoiceDataPropertySettings
         Positions = "Positions";
         Id = "Id";
         Diameter = "Ø";
+        DiameterTitle = "mm";
         LengthPerItem = "м/ед";
         Amount = "Ед";
-        MassPerMeter = "Кг/м";
+        MassPerMeter = "kg/m";
         Object = "TechObject";
     }
 }

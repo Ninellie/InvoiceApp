@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Service.Controllers
 {
@@ -7,16 +8,19 @@ namespace Service.Controllers
     public class InvoiceController : ControllerBase
     {
         private readonly ILogger<InvoiceController> _logger;
+        private readonly NotionOptions _options;
 
-        public InvoiceController(ILogger<InvoiceController> logger)
+        public InvoiceController(ILogger<InvoiceController> logger, IOptions<NotionOptions> options)
         {
             _logger = logger;
+            _options = options.Value;
         }
 
         [HttpPost(Name = "CreateInvoice")]
-        public string Post()
+        public NotionOptions Post()
         {
-            return "OK";
+            //return "OK";
+            return _options;
         }
     }
 }
