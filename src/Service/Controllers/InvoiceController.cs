@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Options;
 
 namespace Service.Controllers
@@ -17,10 +18,29 @@ namespace Service.Controllers
         }
 
         [HttpPost(Name = "CreateInvoice")]
-        public NotionOptions Post()
+        public string Post()
         {
+            var invoiceDataService = new InvoiceDataService(_options);
+            var invoiceItemId = $"2e33e7a86e154fb48376347ec8fb09c4";
+            var invoiceData = invoiceDataService.GetInvoice(invoiceItemId);
+            var documentCreator = new InvoiceExcelCreator();
+            string? invoiceDocument = null;
+            try
+            {
+                invoiceDocument = documentCreator.CreateInvoice(invoiceData, "Templates/InvoiceTemplate.xlsx");
+            }
+            finally
+            {
+                if (invoiceDocument != null)
+                { 
+                    System.IO.File.Delete(invoiceDocument);
+                }
+            }
+
+            return invoiceDocument;
+
             //return "OK";
-            return _options;
+            //return _options;
         }
     }
 }

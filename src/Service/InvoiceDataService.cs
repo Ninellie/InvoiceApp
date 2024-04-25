@@ -31,6 +31,15 @@ public class InvoiceDataService
             NotionVersion = options.Value.NotionVersion
         });
     }
+    public InvoiceDataService(NotionOptions options)
+    {
+        _notionClient = NotionClientFactory.Create(new ClientOptions
+        {
+            AuthToken = options.AuthToken,
+            BaseUrl = options.BaseUrl,
+            NotionVersion = options.NotionVersion
+        });
+    }
 
     #endregion
     public InvoiceData GetInvoice(string pageId)
