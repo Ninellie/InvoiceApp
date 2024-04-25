@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using InvoiceApp;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using Notion.Client;
+using Page = Notion.Client.Page;
 
 namespace Service;
 
@@ -47,20 +49,19 @@ public class InvoiceDataService
         // Получение страницы накладной
         var invoicePage = GetInvoicePageAsync(pageId).Result;
         var properties = invoicePage.Properties;
-        
         var config = new InvoiceDataPropertySettings();
         var date = GetPropValue(properties[config.Date]).ToString();
         var invoiceId = GetPropValue(properties[config.Number]).ToString();
-        var relations = GetPropValue(properties[config.Positions]) as List<string>;
+        var relations = GetPositionsAsync(pageId, properties[config.Positions].Id).Result as ListPropertyItem;
 
         // todo Вставить куда-нибудь проверку на разные заказы
 
         // Получение позиций накладной
         var items = new List<ItemData>();
 
-        foreach (var id in relations)
+        foreach (var propertyItem in relations.Results)
         {
-            var page = GetInvoicePageAsync(id).Result;
+            var page = GetInvoicePageAsync(propertyItem.Id).Result;
             var idProperty = GetPropValue(page.Properties[config.Id]).ToString();
             var itemId = int.Parse(idProperty);
             var diameter = 0;
@@ -76,7 +77,7 @@ public class InvoiceDataService
             }
 
             var lengthPerItem = (double)GetPropValue(page.Properties[config.LengthPerItem]);
-            var massPerMeter = (double)GetPropValue(page.Properties[config.MassPerMeter]); //!!!
+            var massPerMeter = (double)GetPropValue(page.Properties[config.MassPerMeter]);
             var amount = Convert.ToInt32((double)GetPropValue(page.Properties[config.Amount]));
             var techObject = (string)GetPropValue(page.Properties[config.Object]);
 
@@ -160,5 +161,19 @@ public class InvoiceDataService
     {
         var invData = await _notionClient.Pages.RetrieveAsync(pageId);
         return invData;
+    }
+
+    private async Task<IPropertyItemObject> GetPositionsAsync(string pageId, string propId)
+    {
+        var parameters = new RetrievePropertyItemParameters()
+        {
+            PageId = pageId,
+            PageSize = null,
+            PropertyId = propId,
+            StartCursor = ""
+        };
+
+        var relations = await _notionClient.Pages.RetrievePagePropertyItemAsync(parameters);
+        return relations;
     }
 }

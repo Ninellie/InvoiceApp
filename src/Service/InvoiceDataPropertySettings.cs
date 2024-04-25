@@ -1,5 +1,8 @@
 namespace Service;
 
+/// <summary>
+/// Вспомогательный класс для соотношений названий свойств на странице Notion и свойств программы.
+/// </summary>
 public class InvoiceDataPropertySettings
 {
     public string Date { get; }
@@ -13,6 +16,9 @@ public class InvoiceDataPropertySettings
     public string MassPerMeter { get; }
     public string Object { get; }
 
+    /// <summary>
+    /// Создаёт базовый вспомогательный класс для соотношений названий свойств на странице Notion и свойств программы.
+    /// </summary>
     public InvoiceDataPropertySettings()
     {
         Date = "Date";
