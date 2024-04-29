@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using InvoiceApp;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using Notion.Client;
 using Page = Notion.Client.Page;
@@ -59,9 +58,10 @@ public class InvoiceDataService
         // Получение позиций накладной
         var items = new List<ItemData>();
 
-        foreach (var propertyItem in relations.Results)
+        foreach (var simplePropertyItem in relations.Results)
         {
-            var page = GetInvoicePageAsync(propertyItem.Id).Result;
+            var relationPropertyItem = (RelationPropertyItem)simplePropertyItem;
+            var page = GetInvoicePageAsync(relationPropertyItem.Relation.Id).Result;
             var idProperty = GetPropValue(page.Properties[config.Id]).ToString();
             var itemId = int.Parse(idProperty);
             var diameter = 0;

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Options;
 
 namespace Service.Controllers
@@ -17,31 +16,23 @@ namespace Service.Controllers
             _options = options.Value;
         }
 
-        [HttpPost(Name = "CreateInvoice")]
-        public string Post()
+        [HttpGet(Name = "CreateInvoice")]
+        public async Task<IActionResult> GetInvoice()
         {
             var invoiceDataService = new InvoiceDataService(_options);
-            //var invoiceItemId = $"2e33e7a86e154fb48376347ec8fb09c4";
-            var invoiceItemId = $"c4b77a7093a049e7a15aaca1d7406ac0";
+            var invoiceItemId = "c4b77a7093a049e7a15aaca1d7406ac0";
             var invoiceData = invoiceDataService.GetInvoice(invoiceItemId);
             var documentCreator = new InvoiceExcelCreator();
-            string? invoiceDocument = null;
-            try
-            {
-                invoiceDocument = documentCreator.CreateInvoice(invoiceData, "Templates/InvoiceTemplate.xlsx");
-            }
-            finally
-            {
-                if (invoiceDocument != null)
-                { 
-                    System.IO.File.Delete(invoiceDocument);
-                }
-            }
+            var invoiceDocumentPath = documentCreator.CreateInvoice(invoiceData, "Templates/InvoiceTemplate.xlsx");
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(invoiceDocumentPath);
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Invoice.xlsx");
 
-            return invoiceDocument;
 
-            //return "OK";
-            //return _options;
+            Response.Headers.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            using var fileStream = new FileStream(invoiceDocumentPath, FileMode.Open);
+            await fileStream.CopyToAsync(Response.Body);
+            //System.IO.ile.Delete(invoiceDocument);
+            return Ok();
         }
     }
 }
