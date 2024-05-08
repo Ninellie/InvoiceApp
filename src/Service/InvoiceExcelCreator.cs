@@ -6,7 +6,7 @@ using NPOI.XSSF.UserModel;
 namespace Service;
 
 public class InvoiceExcelCreator
-{   
+{
     /// <summary>
     /// 
     /// </summary>
@@ -32,12 +32,11 @@ public class InvoiceExcelCreator
         }
 
         // Создание нового листа
-        var sheet = workbook.CloneSheet(0);
+        var sheet = workbook.CloneSheet(props.TemplateSheet);
 
         sheet.GetRow(props.NumberCell.Row).GetCell(props.NumberCell.Column).SetCellValue(invoiceData.Id);
         sheet.GetRow(props.DateCell.Row).GetCell(props.DateCell.Column).SetCellValue(invoiceData.Date);
         //sheet.ActiveCell = props.DateCell;
-
 
         // Заполнение масс для каждого диаметра
         var massPerDiameters = invoiceData.MassPerDiameters;

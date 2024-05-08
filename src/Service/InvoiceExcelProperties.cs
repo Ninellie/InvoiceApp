@@ -14,11 +14,11 @@ public class InvoiceExcelProperties
     public CellAddress MassSumFirstCell { get; } = new(19, 8);
     public CellAddress MassPerDiameterFirstCell { get; } = new(19, 3);
 
-    public int IdColumn = 1;
-    public int DiameterColumn = 3;
-    public int LengthPerItemColumn = 4;
-    public int AmountColumn = 5;
-    public int TotalLengthColumn = 6;
-    public int MassPerMeterColumn = 7;
-    public int TotalMass = 8;
+    public int IdColumn { get; } = 1;
+    public int DiameterColumn { get; } = 3;
+    public int LengthPerItemColumn { get; } = 4;
+    public int AmountColumn { get; } = 5;
+    public int TotalLengthColumn { get; } = 6;
+    public int MassPerMeterColumn { get; } = 7;
+    public int TotalMass { get; } = 8;
 }
