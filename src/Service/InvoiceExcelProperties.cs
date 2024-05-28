@@ -1,3 +1,4 @@
+using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 
 namespace Service;
@@ -21,4 +22,15 @@ public class InvoiceExcelProperties
     public int TotalLengthColumn { get; } = 6;
     public int MassPerMeterColumn { get; } = 7;
     public int TotalMass { get; } = 8;
+
+    public ICellStyle? ItemCellStyle { get; } = null;
+
+    public InvoiceExcelProperties(IWorkbook workbook)
+    {
+        ItemCellStyle = workbook.CreateCellStyle();
+        ItemCellStyle.BorderTop = BorderStyle.Thin;
+        ItemCellStyle.BorderBottom = BorderStyle.Thin;
+        ItemCellStyle.BorderLeft = BorderStyle.Thin;
+        ItemCellStyle.BorderRight = BorderStyle.Thin;
+    }
 }

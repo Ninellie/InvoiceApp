@@ -83,9 +83,9 @@ public class InvoiceDataService
 
             var item = new ItemData
             {
-                id = itemId,
-                diameter = diameter,
-                lengthPerItem = lengthPerItem,
+                Id = itemId,
+                Diameter = diameter,
+                LengthPerItem = lengthPerItem,
                 Amount = amount,
                 MassPerMeter = massPerMeter,
                 TechObject = techObject

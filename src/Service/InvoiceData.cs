@@ -21,12 +21,12 @@ public class InvoiceData
         {
             foreach (ItemData item in order.items)
             {
-                if (dictionary.ContainsKey(item.diameter))
+                if (dictionary.ContainsKey(item.Diameter))
                 {
-                    dictionary[item.diameter] += item.TotalMass;
+                    dictionary[item.Diameter] += item.TotalMass;
                     continue;
                 }
-                dictionary.Add(item.diameter, item.TotalMass);
+                dictionary.Add(item.Diameter, item.TotalMass);
             }
         }
         return dictionary;

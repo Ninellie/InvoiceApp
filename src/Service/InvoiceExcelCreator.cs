@@ -22,14 +22,14 @@ public class InvoiceExcelCreator
 
         var generatedFilePath = Path.GetTempFileName();
 
-        var props = new InvoiceExcelProperties();
-
         // Open the copied template workbook. 
         IWorkbook workbook;
         using (FileStream fileStream = new FileStream(templatePath, FileMode.Open, FileAccess.ReadWrite))
         {
             workbook = new XSSFWorkbook(fileStream);
         }
+
+        var props = new InvoiceExcelProperties(workbook);
 
         // Создание нового листа
         var sheet = workbook.CloneSheet(props.TemplateSheet);
@@ -44,7 +44,7 @@ public class InvoiceExcelCreator
 
         var massAll = massPerDiameters.Values.Sum();
 
-        sheet.GetRow(19).GetCell(8).SetCellValue(massAll);
+        sheet.GetRow(props.MassSumFirstCell.Row).GetCell(props.MassSumFirstCell.Column).SetCellValue(massAll);
 
         foreach (var massPerDiameter in massPerDiameters)
         {
@@ -53,13 +53,6 @@ public class InvoiceExcelCreator
             massPerDiameterCell.SetCellValue(rowValue);
             massSumRow++;
         }
-
-        //creating style
-        var itemCellStyle = workbook.CreateCellStyle();
-        itemCellStyle.BorderTop = BorderStyle.Thin;
-        itemCellStyle.BorderBottom = BorderStyle.Thin;
-        itemCellStyle.BorderLeft = BorderStyle.Thin;
-        itemCellStyle.BorderRight = BorderStyle.Thin;
 
         // inserting new rows
         var orderRowIndex = props.OrderFirstCell.Row;
@@ -73,40 +66,25 @@ public class InvoiceExcelCreator
         }
 
         // filling cells
-        for (int i = 0; i < invoiceData.Orders.Count; i++)
+        foreach (var order in invoiceData.Orders)
         {
-            var order = invoiceData.Orders[i];
             var orderNameCell = sheet.CreateRow(orderRowIndex).CreateCell(props.OrderFirstCell.Column);
             orderNameCell.SetCellValue(order.name);
             orderRowIndex++;
-            orderNameCell.CellStyle = itemCellStyle;
+            var cellStyle = props.ItemCellStyle;
+            orderNameCell.CellStyle = cellStyle ?? throw new NullReferenceException("Item cell style is null");
             orderNameCell.CellStyle.Alignment = HorizontalAlignment.Center;
 
             foreach (var item in order.items)
             {
                 var itemRow = sheet.CreateRow(orderRowIndex);
-
-                itemRow.CreateCell(props.IdColumn).SetCellValue(item.id);
-                itemRow.GetCell(props.IdColumn).CellStyle = itemCellStyle;
-
-                itemRow.CreateCell(props.DiameterColumn).SetCellValue(item.diameter);
-                itemRow.GetCell(props.DiameterColumn).CellStyle = itemCellStyle;
-
-                itemRow.CreateCell(props.LengthPerItemColumn).SetCellValue(item.lengthPerItem);
-                itemRow.GetCell(props.LengthPerItemColumn).CellStyle = itemCellStyle;
-
-                itemRow.CreateCell(props.AmountColumn).SetCellValue(item.Amount);
-                itemRow.GetCell(props.AmountColumn).CellStyle = itemCellStyle;
-
-                itemRow.CreateCell(props.TotalLengthColumn).SetCellValue(item.TotalLength);
-                itemRow.GetCell(props.TotalLengthColumn).CellStyle = itemCellStyle;
-
-                itemRow.CreateCell(props.MassPerMeterColumn).SetCellValue(item.MassPerMeter);
-                itemRow.GetCell(props.MassPerMeterColumn).CellStyle = itemCellStyle;
-
-                itemRow.CreateCell(props.TotalMass).SetCellValue(item.TotalMass);
-                itemRow.GetCell(props.TotalMass).CellStyle = itemCellStyle;
-
+                FillItemDataCell(itemRow, props.IdColumn, item.Id, cellStyle);
+                FillItemDataCell(itemRow, props.DiameterColumn, item.Diameter, cellStyle);
+                FillItemDataCell(itemRow, props.LengthPerItemColumn, item.LengthPerItem, cellStyle);
+                FillItemDataCell(itemRow, props.AmountColumn, item.Amount, cellStyle);
+                FillItemDataCell(itemRow, props.TotalLengthColumn, item.TotalLength, cellStyle);
+                FillItemDataCell(itemRow, props.MassPerMeterColumn, item.MassPerMeter, cellStyle);
+                FillItemDataCell(itemRow, props.TotalMass, item.TotalMassRounded, cellStyle);
                 orderRowIndex++;
             }
         }
@@ -119,5 +97,11 @@ public class InvoiceExcelCreator
 
         //return path of created file
         return generatedFilePath;
+    }
+
+    private void FillItemDataCell(IRow row, int column, double value, ICellStyle cellStyle)
+    {
+        row.CreateCell(column).SetCellValue(value);
+        row.GetCell(column).CellStyle = cellStyle;
     }
 }

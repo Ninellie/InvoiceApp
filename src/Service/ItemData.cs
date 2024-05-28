@@ -1,14 +1,22 @@
+using MathNet.Numerics;
+
 namespace InvoiceApp;
 
 public class ItemData
 {
-    public int id { get; set; } // order in techObject
-    public int diameter { get; set; } // millimeters
-    public double lengthPerItem { get; set; } // meters
+    public int Id { get; set; } // order in techObject
+    public int Diameter { get; set; } // millimeters
+    public double LengthPerItem { get; set; } // meters
     public int Amount { get; set; }
-    public double TotalLength => lengthPerItem * Amount;
-    public double MassPerMeter { get; set; } // kg
-    public double TotalMass => MassPerMeter * lengthPerItem * Amount;
-    //
+    public double TotalLength => LengthPerItem * Amount;
+    public double MassPerMeter
+    {
+        get => _massPerMeter.Round(1);
+        set => _massPerMeter = value;
+    } // kg
+    public double TotalMassRounded => (_massPerMeter * LengthPerItem * Amount).Round(1);
+    public double TotalMass => _massPerMeter * LengthPerItem * Amount;
     public string TechObject { get; set; }
+
+    private double _massPerMeter;
 }
